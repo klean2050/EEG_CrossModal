@@ -26,7 +26,7 @@ def calc_multiloss(view1_feat, view2_feat, view1_pred, view2_pred, labels_1, lab
         if (1-labels_1[i,0]) in labels_1[:,0]:
             while labels_1[i,0] == labels_1[match,0]: match = np.random.randint(siz)
         dsam_feat[i] = view1_feat[match]
-    #print(view1_pred, view2_pred, view1_feat, view2_feat, labels_1, labels_2)
+    
     # CE prediction loss
     pred_loss = nn.BCELoss()
     pred_loss1 = pred_loss(view1_pred, labels_1[:,0])
@@ -47,7 +47,7 @@ def calc_multiloss(view1_feat, view2_feat, view1_pred, view2_pred, labels_1, lab
     # invariance loss
     term3 = ((view1_feat-view2_feat)**2).sum(1).sqrt().mean()
     
-    return 0.8*term1 + 0.2*term2
+    return 0.99*term1 + 0.01*term2
 
 def calc_loss(out, labels):
 
@@ -55,22 +55,23 @@ def calc_loss(out, labels):
 	loss = nn.BCELoss()
 	return loss(out,labels)
 
-def pretrain_model(model, data_loader, optimizer, patience=5, num_epochs=50):
+def pretrain_model(model, data_loader, optimizer, patience=5, num_epochs=50, verbose=False):
 
     begin = time.time()
     epoch_loss_history, rem  = [], patience
     best_model_wts, best = copy.deepcopy(model.state_dict()), 100.0
+    vprint = print if verbose else lambda *a, **k: None
 
     for epoch in range(num_epochs):
-        print('\nEpoch {}/{}'.format(epoch+1, num_epochs))
-        print('-' * 12)
+        vprint('\nEpoch {}/{}'.format(epoch+1, num_epochs))
+        vprint('-' * 12)
 
         for phase in ['train', 'test']:
             if phase == 'train': model.train()
             else: model.eval()
 
             running_loss = 0.0
-            for samples, labels in tqdm(data_loader[phase], ncols=80):
+            for samples, labels in tqdm(data_loader[phase], ncols=80, disable = not verbose):
                 optimizer.zero_grad()
                 with torch.set_grad_enabled(phase == 'train'):
                     samples, labels = samples.to(device), labels[:,:2].to(device)
@@ -97,7 +98,7 @@ def pretrain_model(model, data_loader, optimizer, patience=5, num_epochs=50):
                 t_labels = np.concatenate(t_labels).squeeze()
 
                 acc = (np.mean(sum(t_preds==t_labels)) * 100.0 / len(t_labels))
-                print('Test Loss: {:.5f}        acc: {:.4f}'.format(epoch_loss, acc))
+                vprint('Test Loss: {:.5f}        acc: {:.4f}'.format(epoch_loss, acc))
 
                 if epoch_loss < best:
                     best, rem = epoch_loss, patience
@@ -105,7 +106,7 @@ def pretrain_model(model, data_loader, optimizer, patience=5, num_epochs=50):
                 else: rem -= 1
                 epoch_loss_history.append(epoch_loss)
 
-            else:  print('Train Loss: {:.5f}'.format(epoch_loss))
+            else:  vprint('Train Loss: {:.5f}'.format(epoch_loss))
         if not rem: break
 
     time_elapsed = time.time() - begin
@@ -113,22 +114,23 @@ def pretrain_model(model, data_loader, optimizer, patience=5, num_epochs=50):
     model.load_state_dict(best_model_wts)
     return model, epoch_loss_history
 
-def cotrain_model(model, data_loader, optimizer, patience=5, num_epochs=100):
+def cotrain_model(model, data_loader, optimizer, patience=5, num_epochs=100, verbose=False):
 
     begin = time.time()
     epoch_loss_history, rem = [], patience
     best_model_wts, best_acc = copy.deepcopy(model.state_dict()), 100.0
+    vprint = print if verbose else lambda *a, **k: None
 
     for epoch in range(num_epochs):
-        print('\nEpoch {}/{}'.format(epoch+1, num_epochs))
-        print('-' * 12)
+        vprint('\nEpoch {}/{}'.format(epoch+1, num_epochs))
+        vprint('-' * 12)
 
         for phase in ['train', 'test']:
             if phase == 'train': model.train()
             else: model.eval()
 
             running_loss = 0.0
-            for eeg, mus in tqdm(data_loader[phase], ncols=80):
+            for eeg, mus in tqdm(data_loader[phase], ncols=80, disable = not verbose):
                 eeg, elabel = eeg[0].to(device), eeg[1].to(device)
                 mus, mlabel = mus[0].to(device), mus[1].to(device)
                 optimizer.zero_grad()
@@ -148,7 +150,7 @@ def cotrain_model(model, data_loader, optimizer, patience=5, num_epochs=100):
                 feats1, feats2, preds1, preds2, labels1, labels2 = get_cross_preds(model, data_loader[phase])
                 labels1, labels2 = label_encoder(labels1).numpy(), label_encoder(labels2).numpy()
                 retr = retrieve(feats1, feats2, labels1, labels2, k=len(feats1), method='emotion')
-                print('Test  Loss: {:.4f} \tEEG->MUS: {:.2f} %'.format(epoch_loss, 100*np.mean(retr)))
+                vprint('Test  Loss: {:.4f} \tEEG->MUS: {:.2f} %'.format(epoch_loss, 100*np.mean(retr)))
 
                 if epoch_loss < best_acc:
                     best_acc, rem = epoch_loss, patience
@@ -156,7 +158,7 @@ def cotrain_model(model, data_loader, optimizer, patience=5, num_epochs=100):
                 else: rem -= 1
                 epoch_loss_history.append(epoch_loss)
 
-            else: print('Train Loss: {:.4f}'.format(epoch_loss))
+            else: vprint('Train Loss: {:.4f}'.format(epoch_loss))
 
         if not rem: break
 
