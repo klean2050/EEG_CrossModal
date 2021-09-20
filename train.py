@@ -2,6 +2,7 @@ import numpy as np, math, pickle, os, time, copy
 import torch, torch.nn as nn, torchvision
 from tqdm import tqdm
 
+from test import get_cross_preds, retrieve
 from utils import *
 
 def calc_multiloss(view1_feat, view2_feat, view1_pred, view2_pred, labels_1, labels_2):
@@ -51,11 +52,8 @@ def calc_multiloss(view1_feat, view2_feat, view1_pred, view2_pred, labels_1, lab
 def calc_loss(out, labels):
 
 	labels = label_encoder(labels.cpu()).to(device).squeeze().float()
-	num = len(labels)
 	loss = nn.BCELoss()
-	loss = loss(out,labels[:,0])
-	acc = torch.where(1*(out>0.5) == labels[:,0], torch.ones(num).to(device), torch.zeros(num).to(device)).sum()/len(out)
-	return loss, acc
+	return loss(out,labels)
 
 def pretrain_model(model, data_loader, optimizer, patience=5, num_epochs=50):
 
@@ -134,11 +132,9 @@ def cotrain_model(model, data_loader, optimizer, patience=5, num_epochs=100):
                 eeg, elabel = eeg[0].to(device), eeg[1].to(device)
                 mus, mlabel = mus[0].to(device), mus[1].to(device)
                 optimizer.zero_grad()
-                #print(eeg.shape, mus.shape, elabel.shape, mlabel.shape)
                 with torch.set_grad_enabled(phase == 'train'):
                     optimizer.zero_grad()
                     view1_feat, view2_feat, view1_pred, view2_pred = model(eeg, mus)
-                    loss, retr = calc_loss(view1_pred, elabel)
                     loss = calc_multiloss(view1_feat, view2_feat, view1_pred, view2_pred, elabel, mlabel)
                     if phase == 'train':
                         loss.backward()
@@ -149,14 +145,13 @@ def cotrain_model(model, data_loader, optimizer, patience=5, num_epochs=100):
             
             if phase == 'test':
                 #scheduler.step(epoch_loss)
-                #feats1, feats2, preds1, preds2, labels1, labels2 = generate_cross_preds(model, data_loader[phase])
-                #labels1, labels2 = label_encoder(labels1).numpy(), label_encoder(labels2).numpy()
-                #retr = retrieve(feats1, feats2, labels1, labels2, k=350, method='emotion')
-                #retr = 0
-                print('Test  Loss: {:.4f} \tEEG->MUS: {:.2f} %'.format(epoch_loss, retr))
+                feats1, feats2, preds1, preds2, labels1, labels2 = get_cross_preds(model, data_loader[phase])
+                labels1, labels2 = label_encoder(labels1).numpy(), label_encoder(labels2).numpy()
+                retr = retrieve(feats1, feats2, labels1, labels2, k=len(feats1), method='emotion')
+                print('Test  Loss: {:.4f} \tEEG->MUS: {:.2f} %'.format(epoch_loss, 100*np.mean(retr)))
 
                 if epoch_loss < best_acc:
-                    best_acc, rem, acc = epoch_loss, patience, retr
+                    best_acc, rem = epoch_loss, patience
                     best_model_wts = copy.deepcopy(model.state_dict())
                 else: rem -= 1
                 epoch_loss_history.append(epoch_loss)
@@ -168,5 +163,5 @@ def cotrain_model(model, data_loader, optimizer, patience=5, num_epochs=100):
     time_elapsed = time.time() - begin
     print('\nTraining complete in {:.0f}m {:.0f}s'.format(time_elapsed//60, time_elapsed%60))
     model.load_state_dict(best_model_wts)
-    return model, acc#epoch_loss_history
+    return model, epoch_loss_history
 

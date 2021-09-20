@@ -1,6 +1,6 @@
 import numpy as np, math, pickle, os, time, copy
 import torch, torch.nn as nn, torchvision
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, ShuffleSplit
 from scipy.signal import stft, butter, filtfilt
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
@@ -69,19 +69,16 @@ def get_crs_loader(path, dur, subject):
         mus_labels  = np.load(path+'tracks_labels.npy')
 
         eeg, lab, mus, mlab = {}, {}, {}, {}
-        for trial in range(40):
-                lst = list(range(40)); lst.remove(trial)
-                X_train = eeg_samples[lst]; X_test = eeg_samples[trial]
-                y_train = eeg_labels[lst];  y_test = eeg_labels[trial]
+        s = ShuffleSplit(n_splits=5, test_size=0.2, random_state=2)
+        for fold, (train_index, test_index) in enumerate(s.split(eeg_samples, eeg_labels)):
+                
+                X_train = eeg_samples[train_index]; X_test = eeg_samples[test_index]
+                y_train = eeg_labels[train_index];  y_test = eeg_labels[test_index]
 
-                X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, test_size=0.1, shuffle=True)
-
-                eeg['train{}'.format(trial)] = X_train.reshape(35,1,32,240)
-                eeg['valid{}'.format(trial)] = X_valid.reshape(4,1,32,240)
-                eeg['test{}'.format(trial)]  = X_test.reshape(1,1,32,240)
-                lab['train{}'.format(trial)] = y_train.reshape(35,-1)
-                lab['valid{}'.format(trial)] = y_valid.reshape(4,-1)
-                lab['test{}'.format(trial)]  = y_test.reshape(1,-1)
+                eeg['train{}'.format(fold)] = X_train.reshape(32,1,32,240)
+                eeg['test{}'.format(fold)]  = X_test.reshape(8,1,32,240)
+                lab['train{}'.format(fold)] = y_train.reshape(32,-1)
+                lab['test{}'.format(fold)]  = y_test.reshape(8,-1)
 
         for x in eeg.keys(): mus[x], mlab[x] = make_pairs(eeg[x], lab[x], mus_samples, mus_labels)
         return eeg, mus, lab, mlab
