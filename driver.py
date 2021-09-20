@@ -15,7 +15,7 @@ from test import test_on, test_fold
 if __name__ == '__main__':
 
     print('Program started. Utilized device: {}'.format(device))
-    #for i in range(32): process_DEAP_DE(datapath, str(i+1), dur=10)
+    for i in range(32): process_DEAP_DE(datapath, str(i+1), dur=10)
     
     for i in range(32):
 
