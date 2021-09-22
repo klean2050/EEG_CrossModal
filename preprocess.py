@@ -51,6 +51,7 @@ def process_DEAP_DE(path, p, dur=1):
         
         final_data = feat_vector.reshape(40*segs, 32, 4*dur)
         final_labels = np.repeat(labels, segs, axis=0)
+        final_labels = np.c_[final_labels, 40*(list(range(segs)))]
 
         np.save('{}/P{}_feats.npy'.format(folder,p),final_data)
         np.save('{}/P{}_annot.npy'.format(folder,p),final_labels)

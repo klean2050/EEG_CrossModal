@@ -37,8 +37,9 @@ class CROSSDataSet(Dataset):
 
 def get_de_loader(path, dur, subject):
 
-        eeg_samples = np.zeros((32,40,32,240))
-        eeg_labels = np.zeros((32,40,4))
+        segs = 60 - dur + 1
+        eeg_samples = np.zeros((32,40*segs,32,4*dur))
+        eeg_labels = np.zeros((32,40*segs,5))
         for s in range(32):
                 c = '0'+str(s+1) if s<9 else str(s+1)
                 eeg_samples[s] = np.load(path+'{}sec_de/P{}_feats.npy'.format(dur,c))
@@ -51,18 +52,19 @@ def get_de_loader(path, dur, subject):
         X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, test_size=0.1, shuffle=True)
 
         eeg, lab = {}, {}
-        eeg['train'] = X_train.reshape(27*40,1,32,240)
-        eeg['valid'] = X_valid.reshape(4*40,1,32,240)
-        eeg['test']  = X_test.reshape(40,1,32,240)
-        lab['train'] = y_train.reshape(27*40,-1)
-        lab['valid'] = y_valid.reshape(4*40,-1)
-        lab['test']  = y_test.reshape(40,-1)
+        eeg['train'] = X_train.reshape(27*40*segs,32,4*dur)
+        eeg['valid'] = X_valid.reshape(4*40*segs,32,4*dur)
+        eeg['test']  = X_test.reshape(40*segs,32,4*dur)
+        lab['train'] = y_train.reshape(27*40*segs,-1)
+        lab['valid'] = y_valid.reshape(4*40*segs,-1)
+        lab['test']  = y_test.reshape(40*segs,-1)
 
         return eeg, lab
 
 def get_crs_loader(path, dur, subject):
 
         c = '0'+str(subject+1) if subject<9 else str(subject+1)
+        segs = 60 - dur + 1
         eeg_samples = np.load(path+'{}sec_de/P{}_feats.npy'.format(dur,c))
         eeg_labels  = np.load(path+'{}sec_de/P{}_annot.npy'.format(dur,c))
         mus_samples = np.load(path+'tracks_embeds.npy')
@@ -75,10 +77,10 @@ def get_crs_loader(path, dur, subject):
                 X_train = eeg_samples[train_index]; X_test = eeg_samples[test_index]
                 y_train = eeg_labels[train_index];  y_test = eeg_labels[test_index]
 
-                eeg['train{}'.format(fold)] = X_train.reshape(32,1,32,240)
-                eeg['test{}'.format(fold)]  = X_test.reshape(8,1,32,240)
-                lab['train{}'.format(fold)] = y_train.reshape(32,-1)
-                lab['test{}'.format(fold)]  = y_test.reshape(8,-1)
+                eeg['train{}'.format(fold)] = X_train.reshape(32*segs,32,4*dur)
+                eeg['test{}'.format(fold)]  = X_test.reshape(8*segs,32,4*dur)
+                lab['train{}'.format(fold)] = y_train.reshape(32*segs,-1)
+                lab['test{}'.format(fold)]  = y_test.reshape(8*segs,-1)
 
         for x in eeg.keys(): mus[x], mlab[x] = make_pairs(eeg[x], lab[x], mus_samples, mus_labels)
         return eeg, mus, lab, mlab
