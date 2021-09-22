@@ -14,17 +14,16 @@ class EEG_LSTM(nn.Module):
 		super(EEG_LSTM, self).__init__()
 		self.hidden = hidden
 		self.lstm1 = nn.LSTM(num_feats, self.hidden[0], num_layers=1, batch_first=True)
-		self.lstm2 = nn.LSTM(num_feats, self.hidden[1], num_layers=1, batch_first=True)
+		self.lstm2 = nn.LSTM(self.hidden[0], self.hidden[1], num_layers=1, batch_first=True)
 		self.drop1 = nn.Dropout(0.3)
 		self.drop2 = nn.Dropout(0.3)
 		self.linr1 = nn.Linear(self.hidden[1]*32,128)
 		self.linr2 = nn.Linear(128,1)
 
 	def forward(self, x):
-		x = x.float().squeeze(dim=1)
-		out, _ = self.lstm1(x)
+		out, _ = self.lstm1(x.float())
 		out = self.drop1(out)
-		out, _ = self.lstm2(x)
+		out, _ = self.lstm2(out)
 		out = out.flatten(start_dim=1)
 		out = self.linr1(self.drop2(out))
 		out = self.linr2(out)
