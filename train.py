@@ -7,47 +7,20 @@ from utils import *
 
 def calc_multiloss(view1_feat, view2_feat, view1_pred, view2_pred, labels_1, labels_2):
     
-    siz = len(view1_feat)
     labels_1 = label_encoder(labels_1.cpu()).to(device).squeeze().float()
     labels_2 = label_encoder(labels_2.cpu()).to(device).squeeze().float()
-    
-    # a negative music pair for each EEG embedding
-    dsim_feat = torch.zeros_like(view2_feat)
-    for i in range(siz):
-        match = np.random.randint(siz)
-        if (1-labels_1[i,0]) in labels_2[:,0]:
-            while labels_1[i,0] == labels_2[match,0]: match = np.random.randint(siz)
-        dsim_feat[i] = view2_feat[match]
-    
-    # a negative EEG pair for each EEG embedding
-    dsam_feat = torch.zeros_like(view1_feat)
-    for i in range(siz):
-        match = np.random.randint(siz)
-        if (1-labels_1[i,0]) in labels_1[:,0]:
-            while labels_1[i,0] == labels_1[match,0]: match = np.random.randint(siz)
-        dsam_feat[i] = view1_feat[match]
     
     # CE prediction loss
     pred_loss = nn.BCELoss()
     pred_loss1 = pred_loss(view1_pred, labels_1[:,0])
-    pred_loss2 = pred_loss(view2_pred, labels_2[:,0])
-    term1 = 0.7*pred_loss1 + 0.3*pred_loss2
-    '''
-    # HGR/CCA similarity loss
-    #term2  = HGR(view1_feat, view2_feat, 1)
-    #term2_loss = cca_loss(len(view1_feat), use_all_singular_values=True, device=device).loss
-    #term2 = term2_loss(view1_feat,view2_feat)
-    '''
-    # triplet distance loss
-    triplet_loss = nn.TripletMarginWithDistanceLoss(distance_function = nn.CosineSimilarity())
-    term21 = triplet_loss(view1_feat, view2_feat, dsam_feat)
-    term22 = triplet_loss(view1_feat, view2_feat, dsim_feat)
-    term2 = 0.5*term21 + 0.5*term22
+    pred_loss2 = pred_loss(view2_pred, labels_2)
+    term1 = 0.6*pred_loss1 + 0.4*pred_loss2
     
-    # invariance loss
-    term3 = ((view1_feat-view2_feat)**2).sum(1).sqrt().mean()
+    # COS metric loss
+    cosine_loss = nn.CosineEmbeddingLoss()
+    term2 = cosine_loss(view1_feat, view2_feat, torch.ones(len(view1_feat)).to(device))
     
-    return 0.99*term1 + 0.01*term2
+    return 0.6*term1 + 0.4*term2
 
 def calc_loss(out, labels):
 
@@ -114,7 +87,7 @@ def pretrain_model(model, data_loader, optimizer, patience=5, num_epochs=50, ver
     model.load_state_dict(best_model_wts)
     return model, epoch_loss_history
 
-def cotrain_model(model, data_loader, optimizer, patience=5, num_epochs=100, verbose=False):
+def cotrain_model(model, data_loader, optimizer, scheduler=False, patience=5, num_epochs=100, verbose=False):
 
     begin = time.time()
     epoch_loss_history, rem = [], patience
@@ -141,12 +114,11 @@ def cotrain_model(model, data_loader, optimizer, patience=5, num_epochs=100, ver
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
-                    #else: scheduler.step(loss.item())
                     running_loss += loss.item()
             epoch_loss = running_loss / len(data_loader[phase].dataset)
             
             if phase == 'test':
-                #scheduler.step(epoch_loss)
+                if scheduler: scheduler.step(epoch_loss)
                 feats1, feats2, preds1, preds2, labels1, labels2 = get_cross_preds(model, data_loader[phase])
                 labels1, labels2 = label_encoder(labels1).numpy(), label_encoder(labels2).numpy()
                 retr = retrieve(feats1, feats2, labels1, labels2, k=len(feats1), method='emotion')

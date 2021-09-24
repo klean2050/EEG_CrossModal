@@ -1,7 +1,7 @@
 import numpy as np, math, pickle, os, torch
 from scipy.signal import stft, butter, filtfilt
 
-device, datapath = 'cpu', '/gpu-data/kavra/DEAP/'
+device, datapath = 'cuda:1', '/gpu-data/kavra/DEAP/'
 
 def label_encoder(labels, ignore_segs=False):
 
@@ -18,13 +18,13 @@ def label_encoder(labels, ignore_segs=False):
 
     return torch.Tensor(encoded).long()
 
-def make_pairs(eeg, elabels, mus_samples, mus_labels):
+def make_pairs(eeg, elabels, mus_samples, mus_labels, dur):
 
-	num = len(eeg)
-	mus, mlabels = np.zeros((num,128)), np.zeros((num,3))
+	num, segs = len(eeg), 60 - dur + 1
+	mus, mlabels = np.zeros((num,128)), np.zeros((num,2))
 	for i in range(num):
 		track, seg = int(elabels[i,2]), int(elabels[i,4])
-		mus[i], mlabels[i] = mus_samples[track*i + seg], mus_labels[track*i + seg]
+		mus[i], mlabels[i] = mus_samples[track*segs + seg], mus_labels[track*segs + seg]
 	return mus, mlabels
 
 def get_band(signal, band, fs=128):
