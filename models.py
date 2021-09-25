@@ -13,19 +13,31 @@ class EEG_LSTM(nn.Module):
 	def __init__(self, num_feats, hidden):
 		super(EEG_LSTM, self).__init__()
 		self.hidden = hidden
+		self.bnorm = nn.BatchNorm1d(32)
 		self.lstm1 = nn.LSTM(num_feats, self.hidden[0], num_layers=1, batch_first=True)
 		self.lstm2 = nn.LSTM(self.hidden[0], self.hidden[1], num_layers=1, batch_first=True)
-		self.drop1 = nn.Dropout(0.3)
+		self.drop1 = nn.Dropout(0.2)
 		self.drop2 = nn.Dropout(0.3)
 		self.linr1 = nn.Linear(self.hidden[1]*32,128)
 		self.linr2 = nn.Linear(128,1)
+		self.atten = nn.Linear(self.hidden[1]*32,1)
+		self.softm = nn.Softmax(dim=1)
 
 	def forward(self, x):
-		out, _ = self.lstm1(x.float())
+		# normalization
+		out = self.bnorm(x.float())
+		# recurrent module
+		out, _ = self.lstm1(out)
 		out = self.drop1(out)
 		out, _ = self.lstm2(out)
+		out = self.drop1(out)
+		# attention module
 		out = out.flatten(start_dim=1)
-		out = self.linr1(self.drop2(out))
+		a = self.softm(self.atten(out))
+		out = a.mul(out)
+		# output embeddings
+		out = self.linr1(out)
+		out = self.drop2(out)
 		out = self.linr2(out)
 		return torch.sigmoid(out).squeeze()
 
