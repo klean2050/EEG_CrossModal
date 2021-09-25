@@ -5,14 +5,29 @@ from tqdm import tqdm
 from test import get_cross_preds, retrieve
 from utils import *
 
-def calc_multiloss(view1_feat, view2_feat, view1_pred, view2_pred, labels_1, labels_2):
+def calc_class_weights(labels, eps=.1):
+
+    minority_class = 0 if sum(labels) > len(labels)/2 else 1
+    minority_weight = len(labels) / sum(labels == minority_class)
+    majority_weight = len(labels) / sum(labels != minority_class)
     
-    labels_1 = label_encoder(labels_1.cpu()).to(device).squeeze().float()
+    normalized_min = minority_weight*0.8
+    normalized_max = majority_weight
+
+    batch_weights = [normalized_min if i == minority_class else normalized_max for i in labels]
+    return torch.Tensor(batch_weights).to(device)
+
+def calc_multiloss(view1_feat, view2_feat, view1_pred, view2_pred, labels_1, labels_2, phase):
+    
+    labels_1 = label_encoder(labels_1.cpu()).to(device).squeeze().float()[:,0]
     labels_2 = label_encoder(labels_2.cpu()).to(device).squeeze().float()
     
+    batch_weights1 = calc_class_weights(labels_1) if phase == 'train' else None
+    batch_weights2 = calc_class_weights(labels_2) if phase == 'train' else None
     # CE prediction loss
-    pred_loss = nn.BCELoss()
-    pred_loss1 = pred_loss(view1_pred, labels_1[:,0])
+    pred_loss = nn.BCELoss(weight=batch_weights1)
+    pred_loss1 = pred_loss(view1_pred, labels_1)
+    pred_loss = nn.BCELoss(weight=batch_weights2)
     pred_loss2 = pred_loss(view2_pred, labels_2)
     term1 = 0.6*pred_loss1 + 0.4*pred_loss2
     
@@ -20,12 +35,13 @@ def calc_multiloss(view1_feat, view2_feat, view1_pred, view2_pred, labels_1, lab
     cosine_loss = nn.CosineEmbeddingLoss()
     term2 = cosine_loss(view1_feat, view2_feat, torch.ones(len(view1_feat)).to(device))
     
-    return 0.6*term1 + 0.4*term2
+    return 0.8*term1 + 0.2*term2
 
-def calc_loss(out, labels):
+def calc_loss(out, labels, phase):
 
 	labels = label_encoder(labels.cpu()).to(device).squeeze().float()
-	loss = nn.BCELoss()
+	batch_weights = calc_class_weights(labels) if phase == 'train' else None
+	loss = nn.BCELoss(weight=batch_weights)
 	return loss(out,labels)
 
 def pretrain_model(model, data_loader, optimizer, patience=5, num_epochs=50, verbose=False):
@@ -50,7 +66,7 @@ def pretrain_model(model, data_loader, optimizer, patience=5, num_epochs=50, ver
                     samples, labels = samples.to(device), labels[:,:2].to(device)
                     optimizer.zero_grad()
                     out = model(samples)
-                    loss = calc_loss(out,labels)
+                    loss = calc_loss(out,labels,phase)
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
@@ -110,7 +126,7 @@ def cotrain_model(model, data_loader, optimizer, scheduler=False, patience=5, nu
                 with torch.set_grad_enabled(phase == 'train'):
                     optimizer.zero_grad()
                     view1_feat, view2_feat, view1_pred, view2_pred = model(eeg, mus)
-                    loss = calc_multiloss(view1_feat, view2_feat, view1_pred, view2_pred, elabel, mlabel)
+                    loss = calc_multiloss(view1_feat, view2_feat, view1_pred, view2_pred, elabel, mlabel, phase)
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
