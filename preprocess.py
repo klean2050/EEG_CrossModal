@@ -1,7 +1,6 @@
-import numpy as np, math, pickle, os, time, copy
-from scipy.signal import stft, butter, filtfilt
-#from musicnn.extractor import extractor
-from tqdm import tqdm
+import numpy as np, pickle, os
+from scipy.signal import stft
+from musicnn.extractor import extractor
 
 from utils import *
 
@@ -48,7 +47,7 @@ def process_DEAP_DE(path, p, dur=1, exclude=False):
                                 for n, seg in enumerate(segments): feat_vector[song, n, channel, b] = np.array(feats)[seg]
 
         folder = path+'{}sec_de'.format(dur)
-        if not os.path.exists(folder): os.makedirs(folder)
+        os.makedirs(folder, exist_ok=True)
         
         final_data = feat_vector.reshape(num_tracks, segs, 32, 4*dur)
         final_labels = np.repeat(labels, segs, axis=0)

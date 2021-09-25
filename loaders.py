@@ -1,12 +1,8 @@
-import numpy as np, math, pickle, os, time, copy
-import torch, torch.nn as nn, torchvision
+import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedShuffleSplit
-from scipy.signal import stft, butter, filtfilt
 from torch.utils.data import Dataset, DataLoader
-from tqdm import tqdm
 
 from utils import *
-from preprocess import process_DEAP_DE
 
 
 class SINGLEDataSet(Dataset):

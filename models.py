@@ -1,11 +1,4 @@
-import numpy as np, math, pickle, os, time, copy
-import torch, torch.nn as nn, torchvision
-from sklearn.model_selection import train_test_split
-from scipy.signal import stft, butter, filtfilt
-from torch.utils.data import Dataset, DataLoader
-from tqdm import tqdm
-
-from utils import *
+import torch, torch.nn as nn
 
 
 class EEG_LSTM(nn.Module):
