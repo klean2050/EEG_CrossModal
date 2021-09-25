@@ -1,4 +1,4 @@
-import numpy as np, math, torch#, pickle, os, torch
+import numpy as np, math, torch
 from scipy.signal import butter, filtfilt
 
 device, datapath = 'cuda:1', '/gpu-data/kavra/DEAP/'

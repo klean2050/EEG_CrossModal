@@ -12,7 +12,7 @@ dur = 3
 if __name__ == '__main__':
 
     print('Program started. Utilized device: {}'.format(device))
-    for i in range(32): process_DEAP_DE(datapath, str(i+1), dur=dur, exclude=True)
+    #for i in range(32): process_DEAP_DE(datapath, str(i+1), dur=dur, exclude=True)
     
     for i in range(32):
         
