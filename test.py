@@ -132,9 +132,17 @@ def test_fold(p_dir, trial, loader, aggregate=False):
 		
 	if not aggregate: pred_mus = 100 * sum(preds2 == labels2[:,0]) / len(preds2)
 	else:  pred_mus = track_aggregate(preds2, labels1, task='class') # ! ! !
-	
-	print("\nStimulus Retrieval from EEG Queries (mAP): {:.2f} %".format(retr_track))
-	print("Related Track Retrieval from EEG Queries (mAP): {:.2f} %".format(retr_emot))
-	print("EEG Emotion Classification (acc): {:.2f} %".format(pred_eeg))
-	print("MUS Emotion Classification (acc): {:.2f} %".format(pred_mus))
 
+	return [retr_track, retr_emot, pred_eeg, pred_mus]
+	
+def test_participant(p_dir, loaders, aggregate=False):
+
+	results = np.zeros((4,))
+	for fold in range(5):
+		fold_results = test_fold(p_dir, fold, loaders['test{}'.format(fold)], aggregate)
+		results += [score/5 for score in fold_results]
+	
+	print("\nStimulus Retrieval from EEG Queries (mAP): {:.2f} %".format(results[0]))
+	print("Related Track Retrieval from EEG Queries (mAP): {:.2f} %".format(results[1]))
+	print("EEG Emotion Classification (acc): {:.2f} %".format(results[2]))
+	print("MUS Emotion Classification (acc): {:.2f} %".format(results[3]))

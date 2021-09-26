@@ -5,13 +5,13 @@ from tqdm import tqdm
 from test import get_cross_preds, retrieve
 from utils import *
 
-def calc_class_weights(labels, eps=.1):
+def calc_class_weights(labels, eps=0.7):
 
     minority_class = 0 if sum(labels) > len(labels)/2 else 1
     minority_weight = len(labels) / sum(labels == minority_class)
     majority_weight = len(labels) / sum(labels != minority_class)
     
-    normalized_min = minority_weight*0.8
+    normalized_min = minority_weight * eps
     normalized_max = majority_weight
 
     batch_weights = [normalized_min if i == minority_class else normalized_max for i in labels]
@@ -24,6 +24,7 @@ def calc_multiloss(view1_feat, view2_feat, view1_pred, view2_pred, labels_1, lab
     
     batch_weights1 = calc_class_weights(labels_1) if phase == 'train' else None
     batch_weights2 = calc_class_weights(labels_2) if phase == 'train' else None
+
     # CE prediction loss
     pred_loss = nn.BCELoss(weight=batch_weights1)
     pred_loss1 = pred_loss(view1_pred, labels_1)
