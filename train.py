@@ -20,7 +20,7 @@ def calc_class_weights(labels, eps=0.7):
 def calc_multiloss(view1_feat, view2_feat, view1_pred, view2_pred, labels_1, labels_2, phase):
     
     labels_1 = label_encoder(labels_1.cpu()).to(device).squeeze().float()[:,0]
-    labels_2 = label_encoder(labels_2.cpu()).to(device).squeeze().float()
+    labels_2 = label_encoder(labels_2.cpu()).to(device).squeeze().float()[:,0]
     
     batch_weights1 = calc_class_weights(labels_1) if phase == 'train' else None
     batch_weights2 = calc_class_weights(labels_2) if phase == 'train' else None
@@ -104,7 +104,7 @@ def pretrain_model(model, data_loader, optimizer, patience=5, num_epochs=50, ver
     model.load_state_dict(best_model_wts)
     return model, epoch_loss_history
 
-def cotrain_model(model, data_loader, optimizer, scheduler=False, patience=5, num_epochs=100, verbose=False):
+def cotrain_model(model, data_loader, optimizer, scheduler=None, patience=5, num_epochs=100, verbose=False):
 
     begin = time.time()
     epoch_loss_history, rem = [], patience

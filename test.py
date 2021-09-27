@@ -1,4 +1,4 @@
-import numpy as np, torch
+import numpy as np, torch, os
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.manifold import TSNE
@@ -63,20 +63,20 @@ def retrieve(eeg, mus, elabels, mlabels, k=0, method='track'):
 def track_aggregate(preds, labels, task='retr'):
     
     segments, tracks, correct = 58, 7, []
-    sorting = lambda x : labels[int(x),1]
-    preds = np.array(sorted(list(preds), key = sorting))
-    labels = np.array(sorted(list(labels[:,0]), key = sorting))
+    sorting = labels[:,1].argsort()
+    preds = np.array(preds).take(sorting)
+    labels = labels[:,0].take(sorting)
     
     for i in range(tracks):
-        trial_indices = np.arange(segments*i, segments*(i+1)) if i+1 < tracks else np.arange(segments*i, len(preds))
+        trial_indices = np.arange(segments*i, segments*(i+1))
         trial, label = preds[trial_indices], labels[trial_indices]
-        result = sum(1 * (trial>0.5) == label)/len(trial) if task == 'class' else np.median(trial)
+        result = 1*(sum(trial == label) > segments/2) if task == 'class' else np.median(trial)
         correct.append(result)
     return 100 * np.mean(correct)
 
 def visualize(features, labels, p, name):
 
-        tsne = TSNE(n_components=2, perplexity=17, learning_rate=130, metric='cosine', square_distances=True).fit_transform(features)
+        tsne = TSNE(n_components=2, perplexity=50, learning_rate=130, metric='cosine', square_distances=True).fit_transform(features)
         tx = MinMaxScaler().fit_transform(tsne[:,0].reshape(-1,1))[:,0]
         ty = MinMaxScaler().fit_transform(tsne[:,1].reshape(-1,1))[:,0]
 
@@ -99,24 +99,25 @@ def visualize(features, labels, p, name):
 
         dist_dir = datapath + 'tsne/tsne_p{}/'.format(p)
         os.makedirs(dist_dir, exist_ok=True)
-        fig.savefig(dist_dir+name)
+        fig.savefig(dist_dir+name); plt.close()
 
 def test_fold(p_dir, trial, loader, aggregate=False):
 	
 	model_name = p_dir + 'CROSS_{}.pt'.format(trial)
-	model = torch.load(model_name).to(device); model.eval()
+	model = torch.load(model_name, map_location=device); model.eval()
 
 	feats1, feats2, preds1, preds2, labels1, labels2 = get_cross_preds(model, loader)
 	labels1 = label_encoder(labels1).numpy()
 	labels2 = label_encoder(labels2).numpy()
 	preds1  = 1 * (preds1 > 0.5)
 	preds2  = 1 * (preds2 > 0.5)
-	'''
-	print("\nExporting t-SNE of the common latent space")
+	
+	# t-SNE of common latent space
 	features = np.concatenate((feats1, feats2))
 	labels = np.concatenate((labels1[:,0], labels2[:,0]))
-	visualize(features, labels, p=p_dir[-2], name='CROSS_{}'.format(trial))
-	'''	
+	subject = p_dir.split('p')[-1].split('/')[0]
+	visualize(features, labels, p=subject, name='CROSS_{}'.format(trial))
+		
 	retr_track = retrieve(feats1, feats2, labels1, labels2, k=len(feats1), method='track')
 	if not aggregate: retr_track = 100 * np.mean(retr_track)
 	else:  retr_track = track_aggregate(retr_track, labels1, task='retr')
@@ -125,19 +126,19 @@ def test_fold(p_dir, trial, loader, aggregate=False):
 	if not aggregate: retr_emot = 100 * np.mean(retr_emot)
 	else:  retr_emot = track_aggregate(retr_emot, labels1, task='retr')
 		
-	print('\n',confusion_matrix(labels1[:,0], preds1))
+	#print('\n',confusion_matrix(labels1[:,0], preds1))
 
 	if not aggregate: pred_eeg = 100 * sum(preds1 == labels1[:,0]) / len(preds1)
 	else:  pred_eeg = track_aggregate(preds1, labels1, task='class')
 		
 	if not aggregate: pred_mus = 100 * sum(preds2 == labels2[:,0]) / len(preds2)
-	else:  pred_mus = track_aggregate(preds2, labels1, task='class') # ! ! !
+	else:  pred_mus = track_aggregate(preds2, labels2, task='class')
 
 	return [retr_track, retr_emot, pred_eeg, pred_mus]
 	
 def test_participant(p_dir, loaders, aggregate=False):
 
-	results = np.zeros((4,))
+	results = np.zeros(4)
 	for fold in range(5):
 		fold_results = test_fold(p_dir, fold, loaders['test{}'.format(fold)], aggregate)
 		results += [score/5 for score in fold_results]
@@ -146,3 +147,5 @@ def test_participant(p_dir, loaders, aggregate=False):
 	print("Related Track Retrieval from EEG Queries (mAP): {:.2f} %".format(results[1]))
 	print("EEG Emotion Classification (acc): {:.2f} %".format(results[2]))
 	print("MUS Emotion Classification (acc): {:.2f} %".format(results[3]))
+
+	return results
