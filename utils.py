@@ -1,7 +1,7 @@
 import numpy as np, math, torch
 from scipy.signal import butter, filtfilt
 
-device, datapath = 'cuda:1', '/gpu-data/kavra/DEAP/'
+device, datapath = torch.device('cuda:2'), '/gpu-data/kavra/DEAP/'
 
 def label_encoder(labels, ignore_segs=False):
 
@@ -16,12 +16,12 @@ def label_encoder(labels, ignore_segs=False):
         if sample[0]> 5 and sample[1]<=5: encoded[i] = np.concatenate(([0],sample[2:numl]))
         if sample[0]> 5 and sample[1]> 5: encoded[i] = np.concatenate(([1],sample[2:numl]))
 
-    return torch.Tensor(encoded).long()
+    return torch.Tensor(encoded).long().to(device)
 
 def make_pairs(eeg, elabels, mus_samples, mus_labels, dur):
 
 	num, segs = len(eeg), 60 - dur + 1
-	mus, mlabels = np.zeros((num,128)), np.zeros((num,2))
+	mus, mlabels = np.zeros((num,128)), np.zeros((num,3))
 	for i in range(num):
 		track, seg = int(elabels[i,2]), int(elabels[i,4])
 		mus[i], mlabels[i] = mus_samples[track*segs + seg], mus_labels[track*segs + seg]

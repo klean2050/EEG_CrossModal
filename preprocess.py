@@ -1,4 +1,4 @@
-import numpy as np, pickle, os
+import numpy as np, pickle, os, csv
 from scipy.signal import stft
 #from musicnn.extractor import extractor
 
@@ -70,7 +70,7 @@ def process_DEAP_stimuli(num_tracks, eeg_dur):
                 for i, row in enumerate(csv_reader):
                         labels[i] = [row["AVG_Valence"], row["AVG_Arousal"]]
                         start[i] = row["Start"]
-
+        
         print('\nLoading DEAP stimuli tracks...')
         final_data = np.zeros((num_tracks, segs, 128))
         for i, track in enumerate(sorted(os.listdir(path))):

@@ -1,5 +1,5 @@
 import torch, torch.nn as nn
-
+from utils import *
 
 class EEG_LSTM(nn.Module):
 
@@ -48,7 +48,7 @@ class CROSS_NN(nn.Module):
         self.relu = nn.LeakyReLU(1e-2, inplace=True)
 
     def load(self, model):
-        m = torch.load(model, map_location='cpu')
+        m = torch.load(model, map_location=device)
         for prm in m.parameters(): prm.requires_grad = True
         m.linr2 = nn.Sequential()
         return m
