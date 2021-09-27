@@ -75,7 +75,7 @@ def get_crs_loader(path, dur, subject):
                 
                 X_train = eeg_samples[train_index]; X_test = eeg_samples[test_index]
                 y_train = eeg_labels[train_index];  y_test = eeg_labels[test_index]
-
+                
                 eeg['train{}'.format(fold)] = X_train.reshape(X_train.shape[0]*segs,32,4*dur)
                 eeg['test{}'.format(fold)]  = X_test.reshape(X_test.shape[0]*segs,32,4*dur)
                 lab['train{}'.format(fold)] = y_train.reshape(y_train.shape[0]*segs,-1)
@@ -94,6 +94,6 @@ def get_loader(path, mode, batch_size, dur, subject='0'):
                 eeg, mus, elabels, mlabels = get_crs_loader(path, dur, subject)
                 dataset = {x:CROSSDataSet(eeg=eeg[x], mus=mus[x], elabels=elabels[x], mlabels=mlabels[x]) for x in eeg.keys()}
         
-        dataloader = {x: DataLoader(dataset[x], batch_size=batch_size, num_workers=0, drop_last=True, shuffle=True) for x in dataset.keys()}
+        dataloader = {x: DataLoader(dataset[x], batch_size=batch_size, num_workers=0, shuffle=True) for x in dataset.keys()}
         return dataloader
 
