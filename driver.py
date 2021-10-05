@@ -21,7 +21,7 @@ if __name__ == '__main__':
         
         p_dir = datapath + 'nets/nets_p{}/'.format(i)
         os.makedirs(p_dir, exist_ok=True)
-        '''
+        
         # pretrain using leave-one-subject-out cross validation
         print('\nPre-Training to test Participant {}.'.format(i+1))
         ind_loader = get_loader(datapath, mode='eeg', batch_size=128, dur=dur, subject=i)
@@ -31,7 +31,7 @@ if __name__ == '__main__':
         emodel, _ = pretrain_model(emodel, loader, optimizer, patience=10, verbose=True)
         torch.save(emodel, p_dir+'EEG_net.pt')
         test_on(ind_loader['test'], emodel)
-        '''
+        
         # cotrain using 5-fold cross validation
         print('\nFine-tuning on Participant {}.'.format(i))
         crs_loader = get_loader(datapath, mode='cross', batch_size=32, dur=dur, subject=i)
