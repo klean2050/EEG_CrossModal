@@ -2,8 +2,8 @@ import numpy as np, time, copy
 import torch, torch.nn as nn
 from tqdm import tqdm
 
-from test import get_cross_preds, retrieve
-from utils import *
+from eeg_cmr.test import get_cross_preds, retrieve
+from eeg_cmr.utils import *
 
 
 def calc_class_weights(labels, eps=0.75):

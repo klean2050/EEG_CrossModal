@@ -1,5 +1,5 @@
 import torch, torch.nn as nn
-from utils import *
+from eeg_cmr.utils import *
 
 
 class EEG_LSTM(nn.Module):

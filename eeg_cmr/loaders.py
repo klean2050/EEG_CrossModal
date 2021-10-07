@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedShuffleSplit
 from torch.utils.data import Dataset, DataLoader
 
-from utils import *
+from eeg_cmr.utils import *
 
 
 class SINGLEDataSet(Dataset):
