@@ -88,7 +88,7 @@ class CROSS_NN(nn.Module):
 
     def load(self, path, pretrained):
         m = (
-            torch.load(path + "EEG_net.pt", map_location=device)
+            torch.load(path, map_location=device)
             if pretrained
             else EEG_LSTM(12, [128, 256]).to(device)
         )

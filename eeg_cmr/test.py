@@ -118,9 +118,9 @@ def visualize(features, labels, p, name):
     plt.close()
 
 
-def test_fold(p_dir, trial, loader, aggregate=False):
+def test_fold(p_dir, trial, loader, metric, aggregate=False):
 
-    model_name = p_dir + "CROSSD_{}_without_pre.pt".format(trial)
+    model_name = p_dir + "CROSS_{}_{}.pt".format(trial, dim)
     model = torch.load(model_name, map_location=device)
     model.eval()
 
@@ -134,15 +134,17 @@ def test_fold(p_dir, trial, loader, aggregate=False):
     features = np.concatenate((feats1, feats2))
     labels = np.concatenate((labels1[:, 0], labels2[:, 0]))
     subject = p_dir.split("p")[-1].split("/")[0]
-    visualize(features, labels, p=subject, name="CROSSD_{}_v".format(trial))
+    visualize(features, labels, p=subject, name="CROSSD_{}_{}".format(trial, dim))
 
-    retr_track = retrieve(feats1, feats2, labels1, labels2, k=len(feats1), method="track")
+    k = 10 if metric == "P@10" else len(feats1)
+
+    retr_track = retrieve(feats1, feats2, labels1, labels2, k, method="track")
     if not aggregate:
         retr_track = 100 * np.mean(retr_track)
     else:
         retr_track = track_aggregate(retr_track, labels1, task="retr")
 
-    retr_emot1 = retrieve(feats1, feats2, labels1, labels2, k=len(feats1), method="emotion")
+    retr_emot1 = retrieve(feats1, feats2, labels1, labels2, k, method="emotion")
     if not aggregate:
         retr_emot = 100 * np.mean(retr_emot1)
     else:
@@ -161,15 +163,15 @@ def test_fold(p_dir, trial, loader, aggregate=False):
     return [retr_track, retr_emot, pred_eeg, pred_mus], labels1, retr_emot1
 
 
-def test_participant(p_dir, loaders, aggregate=False):
+def test_participant(p_dir, loaders, metric, aggregate=False):
 
     results = np.zeros(4)
     for fold in range(5):
-        fold_results, labels1, retr_emot1 = test_fold(p_dir, fold, loaders["test{}".format(fold)], aggregate)
+        fold_results, labels1, retr_emot1 = test_fold(p_dir, fold, loaders["test{}".format(fold)], metric, aggregate)
         results += [score / 5 for score in fold_results]
 
-    print("\nStimulus Retrieval from EEG Queries (mAP): {:.2f} %".format(results[0]))
-    print("Related Track Retrieval from EEG Queries (mAP): {:.2f} %".format(results[1]))
+    print("\nStimulus Retrieval from EEG Queries ({}): {:.2f} %".format(metric, results[0]))
+    print("Related Track Retrieval from EEG Queries ({}): {:.2f} %".format(metric, results[1]))
     print("EEG Emotion Classification (acc): {:.2f} %".format(results[2]))
     print("MUS Emotion Classification (acc): {:.2f} %".format(results[3]))
 

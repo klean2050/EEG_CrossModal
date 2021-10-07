@@ -1,7 +1,7 @@
 import numpy as np, math, torch
 from scipy.signal import butter, filtfilt
 
-device, datapath, dim = torch.device("cuda:2"), "/gpu-data/kavra/DEAP/", "v"
+device, datapath, dim = torch.device("cuda:0"), "../data/", "a"
 
 
 def label_encoder(labels, ignore_segs=False):
