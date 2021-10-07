@@ -1,3 +1,3 @@
 # EEG ~ Music Cross Modal Retrieval
-Ongoing Project on Affective Cross-Modal Retrieval between EEG and Musical Stimuli.
+[ICASSP 2022 Submission] Project on Affective Cross-Modal Learning between EEG and Musical Stimuli.
 
