@@ -17,8 +17,8 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    package_dir={"": "src"},
-    packages=setuptools.find_packages(where="src"),
+    package_dir={"": "eeg_cmr"},
+    packages=setuptools.find_packages(where="eeg_cmr"),
     python_requires=">=3.6",
     install_requires=[
         "matplotlib>=3.4.3",
