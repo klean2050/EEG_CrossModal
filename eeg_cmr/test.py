@@ -167,7 +167,9 @@ def test_participant(p_dir, loaders, metric, aggregate=False):
 
     results = np.zeros(4)
     for fold in range(5):
-        fold_results, labels1, retr_emot1 = test_fold(p_dir, fold, loaders["test{}".format(fold)], metric, aggregate)
+        fold_results, labels1, retr_emot1 = test_fold(
+            p_dir, fold, loaders["test{}".format(fold)], metric, aggregate
+        )
         results += [score / 5 for score in fold_results]
 
     print("\nStimulus Retrieval from EEG Queries ({}): {:.2f} %".format(metric, results[0]))

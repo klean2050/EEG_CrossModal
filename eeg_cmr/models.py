@@ -87,11 +87,7 @@ class CROSS_NN(nn.Module):
         self.relu = nn.LeakyReLU(1e-2, inplace=True)
 
     def load(self, path, pretrained):
-        m = (
-            torch.load(path, map_location=device)
-            if pretrained
-            else EEG_LSTM(12, [128, 256]).to(device)
-        )
+        m = torch.load(path, map_location=device) if pretrained else EEG_LSTM(12, [128, 256]).to(device)
         for prm in m.parameters():
             prm.requires_grad = True
         m.linr2 = nn.Sequential()
