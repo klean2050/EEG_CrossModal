@@ -22,7 +22,6 @@ setuptools.setup(
     python_requires=">=3.6",
     install_requires=[
         "matplotlib>=3.4.3",
-        "musicnn>=0.1.0",
         "numpy>=1.21.2",
         "scikit_learn>=1.0",
         "scipy>=1.7.1",
