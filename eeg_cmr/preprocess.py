@@ -2,7 +2,7 @@ import numpy as np, pickle, os, csv
 from scipy.signal import stft
 #from musicnn.extractor import extractor
 
-from eeg_cmr.utils import *
+from utils import *
 
 
 def load_data(path, only_eeg=True, exclude=False, participant="1"):

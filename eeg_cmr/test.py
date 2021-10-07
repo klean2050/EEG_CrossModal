@@ -4,7 +4,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.manifold import TSNE
 from scipy.spatial.distance import cdist
 
-from eeg_cmr.utils import *
+from utils import *
 
 
 def test_on(test_loader, model, aggregate=False):

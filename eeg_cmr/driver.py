@@ -1,11 +1,11 @@
 import numpy as np, os, torch
 
-from eeg_cmr.utils import *
-from eeg_cmr.preprocess import *
-from eeg_cmr.loaders import get_loader
-from eeg_cmr.models import *
-from eeg_cmr.train import pretrain_model, cotrain_model
-from eeg_cmr.test import test_on, test_participant
+from utils import *
+from preprocess import *
+from loaders import get_loader
+from models import *
+from train import pretrain_model, cotrain_model
+from test import test_on, test_participant
 
 subjects = range(32)
 patience, lr = 15, 1e-4
