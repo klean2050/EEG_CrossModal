@@ -1,0 +1,9 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+src/EEG_CrossModal_klean2050.egg-info/PKG-INFO
+src/EEG_CrossModal_klean2050.egg-info/SOURCES.txt
+src/EEG_CrossModal_klean2050.egg-info/dependency_links.txt
+src/EEG_CrossModal_klean2050.egg-info/requires.txt
+src/EEG_CrossModal_klean2050.egg-info/top_level.txt
