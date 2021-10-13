@@ -65,7 +65,7 @@ if __name__ == "__main__":
             loader = {"train": ind_loader["train"], "test": ind_loader["valid"]}
             emodel = EEG_LSTM(num_feats=12, hidden=[128, 256]).to(device)
             optimizer = torch.optim.Adam(list(emodel.parameters()), lr=1e-4)
-            emodel, _ = pretrain_model(emodel, loader, optimizer, patience, verbose)
+            emodel, _ = pretrain_model(emodel, loader, optimizer, patience, verbose=verbose)
             torch.save(emodel, p_dir + net_name)
 
         if test_pretrain:
@@ -84,7 +84,7 @@ if __name__ == "__main__":
             loader = {"train": crs_loader["train{}".format(fold)], "test": crs_loader["test{}".format(fold)]}
             model = CROSS_NN(p_dir + net_name, dim=32, pretrained=False).to(device)
             optimizer = torch.optim.Adam(list(model.parameters()), lr=1e-4)
-            model, _ = cotrain_model(model, loader, optimizer, patience, verbose)
+            model, _ = cotrain_model(model, loader, optimizer, patience, verbose=verbose)
             torch.save(model, p_dir + cnet_name)
 
         results = test_participant(p_dir, crs_loader, metric, aggregate)
