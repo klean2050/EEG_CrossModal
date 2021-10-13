@@ -52,9 +52,7 @@ def get_de_loader(path, dur, subject, num_tracks=34):
     y_train = eeg_labels[lst]
     y_test = eeg_labels[subject]
 
-    X_train, X_valid, y_train, y_valid = train_test_split(
-        X_train, y_train, test_size=0.1, shuffle=True, random_state=2
-    )
+    X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, test_size=0.1, shuffle=True)
 
     eeg, lab = {}, {}
     eeg["train"] = X_train.reshape(27 * num, 32, 4 * dur)
@@ -80,7 +78,7 @@ def get_crs_loader(path, dur, subject):
     to_stratify = label_encoder(eeg_labels[:, 0, :].squeeze())
 
     eeg, lab, mus, mlab = {}, {}, {}, {}
-    s = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=2)
+    s = StratifiedShuffleSplit(n_splits=5, test_size=0.2)
     for fold, (train_index, test_index) in enumerate(s.split(eeg_samples, to_stratify[:, 0])):
 
         X_train = eeg_samples[train_index]
