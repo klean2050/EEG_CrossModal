@@ -1,11 +1,11 @@
 <div align="center">
 
-## Enhancing Affective Representations of Music-Induced EEG through Multimodal Supervision and latent Domain Adaptation
+# Enhancing Affective Representations of Music-Induced EEG through Multimodal Supervision and latent Domain Adaptation
 [![Conference](http://img.shields.io/badge/ICASSP-2022-4b44ce.svg)](https://ieeexplore.ieee.org/document/9746643)
+  
+</div>
 
 Code and music embeddings provided. To run, you must have the DEAP Dataset, stored into `data/` folder. We provide pre-trained music embeddings.
-
-</div>
   
 * Clone the current repository and `cd` into
 * run `pip install -r requirements.txt`
