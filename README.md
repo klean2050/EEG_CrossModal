@@ -5,7 +5,7 @@
   
 </div>
 
-Code and music embeddings provided. To run, you must have the DEAP Dataset, stored into `data/` folder. We provide pre-trained music embeddings.
+Code and music embeddings provided. To run, you must have the DEAP Dataset, stored into `data/` folder.
   
 * Clone the current repository and `cd` into
 * run `pip install -r requirements.txt`
